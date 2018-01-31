@@ -23,12 +23,34 @@ export default class Sprite extends Component {
       frames: 0,
     }
 
-    this.move = move !== 'vertical' ? 'horizontal' : move
+    this.move = move
     this.speed = 1000 / fps
     this.loopInterval = null
     this.loop = loop
 
     this.totalFrames = sequence.length
+    if ( this.props.rows ) {
+      this.rows = this.props.rows;
+    } else if ( this.move === 'horizontal' ) {
+      this.rows = 1;
+    } else if ( this.move === 'vertical' ) {
+      this.rows = this.totalFrames;
+    } else if ( this.move === 'grid' ) {
+      this.rows = Math.ceil(Math.sqrt(this.totalFrames));
+    } else {
+      this.rows = 1;
+    }
+    if ( this.props.cols ) {
+      this.cols = this.props.cols;
+    } else if ( this.move === 'horizontal' ) {
+      this.cols = this.totalFrames;
+    } else if ( this.move === 'vertical' ) {
+      this.cols = 1;
+    } else if ( this.move === 'grid' ) {
+      this.cols = Math.ceil(Math.sqrt(this.totalFrames));
+    } else {
+      this.cols = 1;
+    }
 
     this.play = this.play.bind(this)
     this.stop = this.stop.bind(this)
@@ -44,7 +66,7 @@ export default class Sprite extends Component {
     Image.getSize(this.props.source, (width, height) =>
       this.setState({
         imageSize: { width, height },
-        current: this.props.sequence[0],
+        current: this.props.sequence[this.props.frames || 0],
         sequence: this.props.sequence,
       }))
   }
@@ -118,6 +140,19 @@ export default class Sprite extends Component {
     const { imageSize } = this.state
     if (!imageSize) return <View />
 
+    var current = this.state.current;
+
+    if (this.props.frames)
+      current = this.state.sequence[this.props.frames];
+
+    this.position = [0, 0];
+    if ( this.move === 'vertical' )
+      this.position[1] = current;
+    else if ( this.move === 'horizontal' )
+      this.position[0] = current;
+    else if ( this.move === 'grid' )
+      this.position = current;
+
     return (
       <Surface
         onStartShouldSetResponderCapture={ () => true }
@@ -127,11 +162,14 @@ export default class Sprite extends Component {
         onResponderMove={ this.onTouchMove }
         onResponderRelease={ this.onTouchEnd }
         onResponderTerminate={ this.onTouchEnd }
+        backgroundColor={"transparent"}
         { ...this.props } >
           <Frame source = { this.props.source }
           size = { imageSize }
           move = { this.move }
-          position = { this.move === 'vertical' ? [ 0, this.state.current ] : [ this.state.current, 0 ] } />
+          rows = { this.rows }
+          cols = { this.cols }
+          position = { this.position } />
       </Surface>
     );
   }
